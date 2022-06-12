@@ -1,7 +1,19 @@
-//问题反馈:https://t.me/Wall_E_Channel
-let mode = __dirname.includes('magic')
-const {Env} = mode ? require('./magic') : require('./magic')
+/*
+M幸运抽奖
+
+环境变量
+M_WX_LUCK_DRAW_URL  活动链接
+
+即时任务，无需cron
+
+*/
+
+let mode = __dirname.includes('/home/magic/Work/wools/magic/raw')
+const {Env} = mode ? require('../magic') : require('./magic')
 const $ = new Env('M幸运抽奖');
+$.whitelist = process.env.M_WX_WHITELIST
+    ? process.env.M_WX_WHITELIST
+    : '1-7';
 $.activityUrl = process.env.M_WX_LUCK_DRAW_URL
     ? process.env.M_WX_LUCK_DRAW_URL
     : '';
@@ -9,7 +21,7 @@ $.notLuckDrawList = process.env.M_WX_NOT_LUCK_DRAW_LIST
     ? process.env.M_WX_NOT_LUCK_DRAW_LIST.split('@')
     : 'test'.split('@');
 if (mode) {
-    $.activityUrl = 'https://lzkj-isv.isvjcloud.com/lzclient/1648724528320/cjwx/common/entry.html?activityId=9cf424654f2d4821a229f73043987968&gameType=wxTurnTable&shopid=11743182'
+    $.activityUrl = ''
 }
 $.activityUrl = $.match(
     /(https?:\/\/[-A-Za-z0-9+&@#/%?=~_|!:,.;]+[-A-Za-z0-9+&@#/%=~_|])/,
@@ -17,13 +29,14 @@ $.activityUrl = $.match(
 $.domain = $.match(/https?:\/\/([^/]+)/, $.activityUrl)
 $.activityId = $.getQueryString($.activityUrl, 'activityId')
 let shopInfo = ''
+console.log(`活动地址: ${$.activityUrl}`);
 $.logic = async function () {
     if (!$.activityId || !$.activityUrl) {
         $.expire = true;
         $.putMsg(`activityId|activityUrl不存在`, $.activityUrl, $.activityId);
         return
     }
-    $.log(`活动id: ${$.activityId}`, `活动url: ${$.activityUrl}`)
+    //$.log(`活动id: ${$.activityId}`, `活动url: ${$.activityUrl}`)
     $.UA = $.ua();
 
     let token = await $.isvObfuscator();
@@ -32,6 +45,7 @@ $.logic = async function () {
         return
     }
     $.Token = token?.token
+    await $.wait(1000);
     if ($.domain.includes("gzsl")) {
         let activityContent = await $.api(
             `wuxian/user/getLottery/${$.activityId}`,
@@ -220,9 +234,9 @@ $.after = async function () {
             || ele?.source}\n`
         }
     }
-    $.msg.push(message)
+    // $.msg.push(message)
     $.msg.push($.activityUrl);
 }
-$.run({whitelist: ['1-30'], wait: [3000, 5000]}).catch(
+$.run({whitelist: [$.whitelist], wait: [3000, 5000]}).catch(
     reason => $.log(reason));
 
